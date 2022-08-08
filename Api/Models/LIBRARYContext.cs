@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Library.Models
+namespace Api.Models
 {
     public partial class LIBRARYContext : DbContext
     {

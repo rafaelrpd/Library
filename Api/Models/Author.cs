@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Library.Models
+namespace Api.Models
 {
-    public partial class Category
+    public partial class Author
     {
-        public Category()
+        public Author()
         {
             Books = new HashSet<Book>();
         }
 
-        public int CategoryId { get; set; }
+        public int AuthorId { get; set; }
         public string? Name { get; set; }
+        public DateTime? RegistrationDate { get; set; }
 
         public virtual ICollection<Book> Books { get; set; }
     }

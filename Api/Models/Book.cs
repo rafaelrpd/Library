@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Library.Models
+namespace Api.Models
 {
     public partial class Book
     {
