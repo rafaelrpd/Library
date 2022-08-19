@@ -22,43 +22,57 @@ namespace Api.Controllers
 
         // GET: api/Authors
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Author>>> GetAuthors()
+        public async Task<ActionResult<IEnumerable<AuthorDTO>>> GetAuthors()
         {
-          if (_context.Authors == null)
-          {
-              return NotFound();
-          }
-            return await _context.Authors.ToListAsync();
+            if (_context.Authors == null)
+            {
+                return NotFound();
+            }
+            return await _context.Authors
+                .Select(a => AuthorToDTO(a))
+                .ToListAsync();
         }
 
         // GET: api/Authors/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Author>> GetAuthor(int id)
         {
-          if (_context.Authors == null)
-          {
-              return NotFound();
-          }
-            var author = await _context.Authors.FindAsync(id);
+            if (_context.Authors == null)
+            {
+                return NotFound();
+            }
+            var author = await _context.Authors
+                .Where(i => i.AuthorId == id)
+                .Include(b => b.Books)
+                .Select(a => AuthorDetailsToDTO(a))
+                .ToListAsync();
 
             if (author == null)
             {
                 return NotFound();
             }
 
-            return author;
+            return Ok(author);
         }
 
         // PUT: api/Authors/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutAuthor(int id, Author author)
+        public async Task<IActionResult> PutAuthor(int id, AuthorDTO authorDTO)
         {
-            if (id != author.AuthorId)
+            if (id != authorDTO.AuthorId)
             {
                 return BadRequest();
             }
 
+            ICollection<Book> books = _context.Books.Where(ai => ai.AuthorId == authorDTO.AuthorId).ToList();
+            Author author = new Author()
+            {
+                AuthorId = authorDTO.AuthorId,
+                Name = authorDTO.Name,
+                RegistrationDate = authorDTO.RegistrationDate,
+                Books = books
+            };
             _context.Entry(author).State = EntityState.Modified;
 
             try
@@ -83,16 +97,24 @@ namespace Api.Controllers
         // POST: api/Authors
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Author>> PostAuthor(Author author)
+        public async Task<ActionResult<Author>> PostAuthor(AuthorDTO authorDTO)
         {
-          if (_context.Authors == null)
-          {
-              return Problem("Entity set 'LIBRARYContext.Authors'  is null.");
-          }
+            if (_context.Authors == null)
+            {
+                return Problem("Entity set 'LIBRARYContext.Authors'  is null.");
+            }
+
+            Author author = new Author()
+            {
+                Name = authorDTO.Name,
+                RegistrationDate = authorDTO.RegistrationDate,
+                Books = null!
+            };
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAuthor), new { id = author.AuthorId }, author);
+            authorDTO.AuthorId = author.AuthorId;
+            return CreatedAtAction(nameof(GetAuthor), new { id = authorDTO.AuthorId }, authorDTO);
         }
 
         // DELETE: api/Authors/5
@@ -119,5 +141,32 @@ namespace Api.Controllers
         {
             return (_context.Authors?.Any(e => e.AuthorId == id)).GetValueOrDefault();
         }
+
+        static AuthorDTO AuthorToDTO(Author author) =>
+            new AuthorDTO
+            {
+                AuthorId = author.AuthorId,
+                Name = author.Name,
+                RegistrationDate = author.RegistrationDate
+            };
+
+        static AuthorDetailsDTO AuthorDetailsToDTO(Author author) =>
+            new AuthorDetailsDTO
+            {
+                AuthorId = author.AuthorId,
+                Name = author.Name,
+                RegistrationDate = author.RegistrationDate,
+                Books = author.Books.Select(b => BookToDTO(b)).ToList()
+            };
+
+        static BookDTO BookToDTO(Book book) =>
+            new BookDTO
+            {
+                Isbn = book.Isbn,
+                AuthorId = book.AuthorId,
+                CategoryId = book.CategoryId,
+                Title = book.Title,
+                Quantity = book.Quantity
+            };
     }
 }
