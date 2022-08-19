@@ -22,13 +22,15 @@ namespace Api.Controllers
 
         // GET: api/Books
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
+        public async Task<ActionResult<IEnumerable<BookDTO>>> GetBooks()
         {
-          if (_context.Books == null)
-          {
-              return NotFound();
-          }
-            return await _context.Books.ToListAsync();
+            if (_context.Books == null)
+            {
+                return NotFound();
+            }
+            return await _context.Books
+                .Select(b => BookToDTO(b))
+                .ToListAsync();
         }
 
         // GET: api/Books/5
@@ -39,25 +41,46 @@ namespace Api.Controllers
           {
               return NotFound();
           }
-            var book = await _context.Books.FindAsync(id);
+            var book = await _context.Books
+                .Where(i => i.Isbn == id)
+                .Include(a => a.Author)
+                .Include(c => c.Category)
+                .Include(bb => bb.BorrowedBooks)
+                .Select(b => BookDetailsToDTO(b))
+                .ToListAsync();
 
             if (book == null)
             {
                 return NotFound();
             }
 
-            return book;
+            return Ok(book);
         }
 
         // PUT: api/Books/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBook(string id, Book book)
+        public async Task<IActionResult> PutBook(string id, BookDTO bookDTO)
         {
-            if (id != book.Isbn)
+            if (id != bookDTO.Isbn)
             {
                 return BadRequest();
             }
+
+            Author author = _context.Authors.Where(ai => ai.AuthorId == bookDTO.AuthorId).First();
+            Category category = _context.Categories.Where(ai => ai.CategoryId == bookDTO.CategoryId).First();
+            ICollection<BorrowedBook> borrowedBooks = _context.BorrowedBooks.Where(bi => bi.BookId == bookDTO.Isbn).ToList();
+            Book book = new Book()
+            {
+                Isbn = bookDTO.Isbn,
+                AuthorId = bookDTO.AuthorId,
+                CategoryId = bookDTO.CategoryId,
+                Title = bookDTO.Title,
+                Quantity = bookDTO.Quantity,
+                Author = author,
+                Category = category,
+                BorrowedBooks = borrowedBooks
+            };
 
             _context.Entry(book).State = EntityState.Modified;
 
@@ -83,12 +106,26 @@ namespace Api.Controllers
         // POST: api/Books
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Book>> PostBook(Book book)
+        public async Task<ActionResult<Book>> PostBook(BookDTO bookDTO)
         {
-          if (_context.Books == null)
-          {
-              return Problem("Entity set 'LIBRARYContext.Books'  is null.");
-          }
+            if (_context.Books == null)
+            {
+                return Problem("Entity set 'LIBRARYContext.Books'  is null.");
+            }
+
+            Author author = _context.Authors.Where(ai => ai.AuthorId == bookDTO.AuthorId).First();
+            Category category = _context.Categories.Where(ai => ai.CategoryId == bookDTO.CategoryId).First();
+            Book book = new Book()
+            {
+                Isbn = bookDTO.Isbn,
+                AuthorId = bookDTO.AuthorId,
+                CategoryId = bookDTO.CategoryId,
+                Title = bookDTO.Title,
+                Quantity = bookDTO.Quantity,
+                Author = author,
+                Category = category,
+                BorrowedBooks = null!
+            };
             _context.Books.Add(book);
             try
             {
@@ -106,7 +143,7 @@ namespace Api.Controllers
                 }
             }
 
-            return CreatedAtAction(nameof(GetBook), new { id = book.Isbn }, book);
+            return CreatedAtAction(nameof(GetBook), new { id = bookDTO.Isbn }, bookDTO);
         }
 
         // DELETE: api/Books/5
@@ -133,5 +170,53 @@ namespace Api.Controllers
         {
             return (_context.Books?.Any(e => e.Isbn == id)).GetValueOrDefault();
         }
+
+        static BookDTO BookToDTO(Book book) =>
+            new BookDTO
+            {
+                Isbn = book.Isbn,
+                AuthorId = book.AuthorId,
+                CategoryId = book.CategoryId,
+                Title = book.Title,
+                Quantity = book.Quantity
+            };
+        static BookDetailsDTO BookDetailsToDTO(Book book) =>
+            new BookDetailsDTO
+            {
+                Isbn = book.Isbn,
+                AuthorId = book.AuthorId,
+                CategoryId = book.CategoryId,
+                Title = book.Title,
+                Quantity = book.Quantity,
+                Author = AuthorToDTO(book.Author),
+                Category = CategoryToDTO(book.Category),
+                BorrowedBooks = book.BorrowedBooks.Select(bb => BorrowedBookToDTO(bb)).ToList()
+            };
+
+        static AuthorDTO AuthorToDTO(Author author) =>
+            new AuthorDTO
+            {
+                AuthorId = author.AuthorId,
+                Name = author.Name,
+                RegistrationDate = author.RegistrationDate
+            };
+
+        static CategoryDTO CategoryToDTO(Category category) =>
+            new CategoryDTO
+            {
+                CategoryId = category.CategoryId,
+                Name = category.Name
+            };
+
+        static BorrowedBookDTO BorrowedBookToDTO(BorrowedBook borrowedBook) =>
+            new BorrowedBookDTO
+            {
+                Id = borrowedBook.Id,
+                ClientId = borrowedBook.ClientId,
+                BookId = borrowedBook.BookId,
+                BorrowedDate = borrowedBook.BorrowedDate,
+                LimitDate = borrowedBook.LimitDate,
+                ReturnedDate = borrowedBook.ReturnedDate
+            };
     }
 }

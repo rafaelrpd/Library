@@ -20,4 +20,25 @@ namespace Api.Models
         public virtual Category Category { get; set; } = null!;
         public virtual ICollection<BorrowedBook> BorrowedBooks { get; set; }
     }
+
+    public class BookDTO
+    {
+        public string Isbn { get; set; } = null!;
+        public int AuthorId { get; set; }
+        public int CategoryId { get; set; }
+        public string? Title { get; set; }
+        public int? Quantity { get; set; }
+    }
+
+    public class BookDetailsDTO
+    {
+        public string Isbn { get; set; } = null!;
+        public int AuthorId { get; set; }
+        public int CategoryId { get; set; }
+        public string? Title { get; set; }
+        public int? Quantity { get; set; }
+        public AuthorDTO Author { get; set; } = null!;
+        public CategoryDTO Category { get; set; } = null!;
+        public ICollection<BorrowedBookDTO>? BorrowedBooks { get; set; }
+    }
 }
