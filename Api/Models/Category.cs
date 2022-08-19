@@ -15,4 +15,17 @@ namespace Api.Models
 
         public virtual ICollection<Book> Books { get; set; }
     }
+
+    public class CategoryDTO
+    {
+        public int CategoryId { get; set; }
+        public string? Name { get; set; }
+    }
+
+    public class CategoryDetailsDTO
+    {
+        public int CategoryId { get; set; }
+        public string? Name { get; set; }
+        public ICollection<BookDTO>? Books { get; set; }
+    }
 }
