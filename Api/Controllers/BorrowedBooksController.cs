@@ -33,7 +33,7 @@ namespace Api.Controllers
                 .ToListAsync();
         }
 
-        // GET: api/BorrowedBooks/5
+        // GET: api/BorrowedBooks/8886713611511
         [HttpGet("{id}")]
         public async Task<ActionResult<BorrowedBook>> GetBorrowedBook(string id)
         {
@@ -167,7 +167,6 @@ namespace Api.Controllers
                 ReturnedDate = borrowedBook.ReturnedDate
             };
 
-        //not working
         static BorrowedBookDetailsDTO BorrowedBookDetailsToDTO(BorrowedBook borrowedBook) =>
             new BorrowedBookDetailsDTO
             {
