@@ -24,10 +24,11 @@ namespace Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategories()
         {
-          if (_context.Categories == null)
-          {
-              return NotFound();
-          }
+            if (_context.Categories == null)
+            {
+                return NotFound();
+            }
+
             return await _context.Categories
                 .Select(c => CategoryToDTO(c))
                 .ToListAsync();
@@ -37,10 +38,11 @@ namespace Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Category>> GetCategory(int id)
         {
-          if (_context.Categories == null)
-          {
-              return NotFound();
-          }
+            if (_context.Categories == null)
+            {
+                return NotFound();
+            }
+
             var category = await _context.Categories
                 .Where(i => i.CategoryId == id)
                 .Include(b => b.Books)

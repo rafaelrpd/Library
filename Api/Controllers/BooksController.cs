@@ -37,10 +37,11 @@ namespace Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Book>> GetBook(string id)
         {
-          if (_context.Books == null)
-          {
-              return NotFound();
-          }
+            if (_context.Books == null)
+            {
+                return NotFound();
+            }
+
             var book = await _context.Books
                 .Where(i => i.Isbn == id)
                 .Include(a => a.Author)
