@@ -46,7 +46,8 @@ namespace Api.Models
 
                 entity.Property(e => e.RegistrationDate)
                     .HasColumnType("date")
-                    .HasColumnName("REGISTRATION DATE");
+                    .HasColumnName("REGISTRATION DATE")
+                    .HasDefaultValueSql("GETUTCDATE()");
             });
 
             modelBuilder.Entity<Book>(entity =>
