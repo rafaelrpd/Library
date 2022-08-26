@@ -33,12 +33,9 @@ namespace Api.Models
     public class BookDetailsDTO
     {
         public string Isbn { get; set; } = null!;
-        public int AuthorId { get; set; }
-        public int CategoryId { get; set; }
         public string? Title { get; set; }
         public int? Quantity { get; set; }
         public AuthorDTO Author { get; set; } = null!;
         public CategoryDTO Category { get; set; } = null!;
-        public ICollection<BorrowedBookDTO>? BorrowedBooks { get; set; }
     }
 }

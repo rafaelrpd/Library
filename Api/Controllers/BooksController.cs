@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Models;
 
@@ -21,7 +16,19 @@ namespace Api.Controllers
         }
 
         // GET: api/Books
+        /// <summary>
+        /// List all books with ISBN, authorId, categoryId, title and quantity.
+        /// </summary>
+        /// <returns>List all books with ISBN, authorId, categoryId, title and quantity.</returns>
+        /// <remarks>
+        /// Instructions: Just send a GET request to URI /api/books.
+        /// </remarks>
+        /// <response code="200">Returns all books with simple information.</response>
+        /// <response code="404">Book list not found.</response>
         [HttpGet]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<BookDTO>>> GetBooks()
         {
             if (_context.Books == null)
@@ -34,33 +41,74 @@ namespace Api.Controllers
         }
 
         // GET: api/Books/8886713611511
+        /// <summary>
+        /// Return a specific book with full information.
+        /// </summary>
+        /// <returns>Return a specific book with full information.</returns>
+        /// <remarks>
+        /// Instructions: Just send a GET request to URI /api/books/{id}, where ID is an ISBN as INT(13).
+        ///     Sample request:
+        ///     
+        ///         GET /api/books/8886713611511
+        /// </remarks>
+        /// <param name="id" example="8886713611511"></param>
+        /// <response code="200">Return a specific book with full information.</response>
+        /// <response code="404">Book not found.</response>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Book>> GetBook(string id)
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BookDetailsDTO>> GetBook(string id)
         {
             if (_context.Books == null)
             {
                 return NotFound();
             }
 
-            var book = await _context.Books
+            BookDetailsDTO book = await _context.Books
                 .Where(i => i.Isbn == id)
                 .Include(a => a.Author)
                 .Include(c => c.Category)
-                .Include(bb => bb.BorrowedBooks)
                 .Select(b => BookDetailsToDTO(b))
-                .ToListAsync();
+                .FirstOrDefaultAsync();
 
             if (book == null)
             {
                 return NotFound();
             }
 
-            return Ok(book);
+            return book;
         }
 
-        // PUT: api/Books/5
+        // PUT: api/Books/8886713611511
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Change all info of a specific book.
+        /// </summary>
+        /// <param name="id" example="8886713611511"></param>
+        /// <param name="bookDTO"></param>
+        /// <returns>Change all information from a specific book.</returns>
+        /// <remarks>
+        /// Instructions: Send a PUT request to URI /api/books/{id}, where ID is an ISBN as INT(13) with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///         PUT /api/books/8886713611511
+        ///         {
+        ///             "isbn": 8886713611511,
+        ///             "authorId": "1",
+        ///             "categoryId": "1",
+        ///             "title": "New title",
+        ///             "quantity": 10
+        ///         }
+        /// </remarks>
+        /// <response code="204">Changes done correctly.</response>
+        /// <response code="400">URI ID not equal as informed in JSON body.</response>
+        /// <response code="404">Book not found.</response>
         [HttpPut("{id}")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutBook(string id, BookDTO bookDTO)
         {
             if (id != bookDTO.Isbn)
@@ -68,22 +116,15 @@ namespace Api.Controllers
                 return BadRequest();
             }
 
-            Author author = _context.Authors.Where(ai => ai.AuthorId == bookDTO.AuthorId).First();
-            Category category = _context.Categories.Where(ai => ai.CategoryId == bookDTO.CategoryId).First();
-            ICollection<BorrowedBook> borrowedBooks = _context.BorrowedBooks.Where(bi => bi.BookId == bookDTO.Isbn).ToList();
-            Book book = new Book()
+            Book bookContext = await _context.Books.FirstOrDefaultAsync(bi => bi.Isbn == id);
+            if (bookContext == null)
             {
-                Isbn = bookDTO.Isbn,
-                AuthorId = bookDTO.AuthorId,
-                CategoryId = bookDTO.CategoryId,
-                Title = bookDTO.Title,
-                Quantity = bookDTO.Quantity,
-                Author = author,
-                Category = category,
-                BorrowedBooks = borrowedBooks
-            };
-
-            _context.Entry(book).State = EntityState.Modified;
+                return NotFound();
+            }
+            bookContext.AuthorId = bookDTO.AuthorId;
+            bookContext.CategoryId = bookDTO.CategoryId;
+            bookContext.Title = bookDTO.Title;
+            bookContext.Quantity = bookDTO.Quantity;
 
             try
             {
@@ -106,7 +147,30 @@ namespace Api.Controllers
 
         // POST: api/Books
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Create a new book.
+        /// </summary>
+        /// <param name="bookDTO"></param>
+        /// <returns>Create a new book.</returns>
+        /// <remarks>
+        /// Instructions: Send a POST request to URI /api/books with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///     POST /api/books
+        ///         {
+        ///             "isbn": 3339998881013,
+        ///             "authorId": "1",
+        ///             "categoryId": "1",
+        ///             "title": "New post book",
+        ///             "quantity": 10
+        ///         }
+        /// </remarks>
+        /// <response code="204">New author created successfully</response>
+        /// <response code="404">Entity set 'LIBRARYContext.Authors' is null.</response>
         [HttpPost]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Book>> PostBook(BookDTO bookDTO)
         {
             if (_context.Books == null)
@@ -144,11 +208,27 @@ namespace Api.Controllers
                 }
             }
 
-            return CreatedAtAction(nameof(GetBook), new { id = bookDTO.Isbn }, bookDTO);
+            return NoContent();
         }
 
-        // DELETE: api/Books/5
+        // DELETE: api/Books/3339998881013
+        /// <summary>
+        /// Delete a specific book.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Delete a specific book by ID.</returns>
+        /// <remarks>
+        /// Instructions: Just send a DELETE request to URI /api/books/{id}, where ID is an ISBN as INT(13).
+        ///     Sample request:
+        ///     
+        ///         DELETE /api/books/3339998881013
+        /// </remarks>
+        /// <response code="204">Delete done successfully.</response>
+        /// <response code="404">Book not found.</response>
         [HttpDelete("{id}")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteBook(string id)
         {
             if (_context.Books == null)
@@ -185,21 +265,17 @@ namespace Api.Controllers
             new BookDetailsDTO
             {
                 Isbn = book.Isbn,
-                AuthorId = book.AuthorId,
-                CategoryId = book.CategoryId,
                 Title = book.Title,
                 Quantity = book.Quantity,
                 Author = AuthorToDTO(book.Author),
-                Category = CategoryToDTO(book.Category),
-                BorrowedBooks = book.BorrowedBooks.Select(bb => BorrowedBookToDTO(bb)).ToList()
+                Category = CategoryToDTO(book.Category)
             };
 
         static AuthorDTO AuthorToDTO(Author author) =>
             new AuthorDTO
             {
                 AuthorId = author.AuthorId,
-                Name = author.Name,
-                RegistrationDate = author.RegistrationDate
+                Name = author.Name
             };
 
         static CategoryDTO CategoryToDTO(Category category) =>
@@ -207,17 +283,6 @@ namespace Api.Controllers
             {
                 CategoryId = category.CategoryId,
                 Name = category.Name
-            };
-
-        static BorrowedBookDTO BorrowedBookToDTO(BorrowedBook borrowedBook) =>
-            new BorrowedBookDTO
-            {
-                Id = borrowedBook.Id,
-                ClientId = borrowedBook.ClientId,
-                BookId = borrowedBook.BookId,
-                BorrowedDate = borrowedBook.BorrowedDate,
-                LimitDate = borrowedBook.LimitDate,
-                ReturnedDate = borrowedBook.ReturnedDate
             };
     }
 }
