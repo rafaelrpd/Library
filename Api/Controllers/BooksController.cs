@@ -158,15 +158,15 @@ namespace Api.Controllers
         ///     
         ///     POST /api/books
         ///         {
-        ///             "isbn": 3339998881013,
-        ///             "authorId": "1",
-        ///             "categoryId": "1",
+        ///             "isbn": 8886713611511,
+        ///             "authorId": "3",
+        ///             "categoryId": "3",
         ///             "title": "New post book",
-        ///             "quantity": 10
+        ///             "quantity": 30
         ///         }
         /// </remarks>
         /// <response code="204">New author created successfully</response>
-        /// <response code="404">Entity set 'LIBRARYContext.Authors' is null.</response>
+        /// <response code="404">Entity set 'LIBRARYContext.Books' is null.</response>
         [HttpPost]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -211,17 +211,17 @@ namespace Api.Controllers
             return NoContent();
         }
 
-        // DELETE: api/Books/3339998881013
+        // DELETE: api/Books/8886713611511
         /// <summary>
         /// Delete a specific book.
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="id" example="8886713611511"></param>
         /// <returns>Delete a specific book by ID.</returns>
         /// <remarks>
         /// Instructions: Just send a DELETE request to URI /api/books/{id}, where ID is an ISBN as INT(13).
         ///     Sample request:
         ///     
-        ///         DELETE /api/books/3339998881013
+        ///         DELETE /api/books/8886713611511
         /// </remarks>
         /// <response code="204">Delete done successfully.</response>
         /// <response code="404">Book not found.</response>

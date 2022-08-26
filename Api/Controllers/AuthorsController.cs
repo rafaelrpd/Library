@@ -181,13 +181,13 @@ namespace Api.Controllers
         /// <summary>
         /// Delete a specific author.
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="id" example="1022"></param>
         /// <returns>Delete a specific author by ID.</returns>
         /// <remarks>
         /// Instructions: Just send a DELETE request to URI /api/authors/{id}, where ID is an INT.
         ///     Sample request:
         ///     
-        ///         DELETE /api/authors/5
+        ///         DELETE /api/authors/1022
         /// </remarks>
         /// <response code="204">Delete done successfully.</response>
         /// <response code="404">Author not found.</response>
