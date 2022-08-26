@@ -16,13 +16,17 @@ namespace Api.Models
 
         public virtual ICollection<Book> Books { get; set; }
     }
-
     public class AuthorDTO
     {
         public int AuthorId { get; set; }
         public string? Name { get; set; }
-        public DateTime? RegistrationDate { get; set; }
     }
+
+    public class AuthorPostDTO
+    {
+        public string? Name { get; set; }
+    }
+
     public class AuthorDetailsDTO
     {
         public int AuthorId { get; set; }
