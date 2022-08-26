@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Models;
 
@@ -21,7 +16,19 @@ namespace Api.Controllers
         }
 
         // GET: api/Categories
+        /// <summary>
+        /// List all categories with categoryId and name.
+        /// </summary>
+        /// <returns>List all categories with categoryId and name.</returns>
+        /// <remarks>
+        /// Instructions: Just send a GET request to URI /api/categories.
+        /// </remarks>
+        /// <response code="200">Returns all categories with simple information.</response>
+        /// <response code="404">Category list not found.</response>
         [HttpGet]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategories()
         {
             if (_context.Categories == null)
@@ -35,31 +42,70 @@ namespace Api.Controllers
         }
 
         // GET: api/Categories/5
+        /// <summary>
+        /// Return a specific category with full information.
+        /// </summary>
+        /// <returns>Return a specific category with full information.</returns>
+        /// <remarks>
+        /// Instructions: Just send a GET request to URI /api/categories/{id}, where ID is an INT.
+        ///     Sample request:
+        ///     
+        ///         GET /api/categories/1
+        /// </remarks>
+        /// <param name="id" example="1"></param>
+        /// <response code="200">Return a specific category with full information.</response>
+        /// <response code="404">Category not found.</response>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Category>> GetCategory(int id)
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<CategoryDetailsDTO>> GetCategory(int id)
         {
             if (_context.Categories == null)
             {
                 return NotFound();
             }
 
-            var category = await _context.Categories
+            CategoryDetailsDTO category = await _context.Categories
                 .Where(i => i.CategoryId == id)
                 .Include(b => b.Books)
                 .Select(c => CategoryDetailsToDTO(c))
-                .ToListAsync();
+                .FirstOrDefaultAsync();
 
             if (category == null)
             {
                 return NotFound();
             }
 
-            return Ok(category);
+            return category;
         }
 
         // PUT: api/Categories/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Change all info of a specific category.
+        /// </summary>
+        /// <param name="id" example="1"></param>
+        /// <param name="categoryDTO"></param>
+        /// <returns>Change all information from a specific category.</returns>
+        /// <remarks>
+        /// Instructions: Send a PUT request to URI /api/categories/{id}, where ID is an INT with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///         PUT /api/categories/1
+        ///         {
+        ///             "categoryId": 1,
+        ///             "name": "New category name",
+        ///         }
+        /// </remarks>
+        /// <response code="204">Changes done correctly.</response>
+        /// <response code="400">URI ID not equal as informed in JSON body.</response>
+        /// <response code="404">Category not found.</response>
         [HttpPut("{id}")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutCategory(int id, CategoryDTO categoryDTO)
         {
             if (id != categoryDTO.CategoryId)
@@ -67,14 +113,13 @@ namespace Api.Controllers
                 return BadRequest();
             }
 
-            ICollection<Book> books = _context.Books.Where(ci => ci.CategoryId == categoryDTO.CategoryId).ToList();
-            Category category = new Category()
+            Category categoryContext = await _context.Categories.FirstOrDefaultAsync(ci => ci.CategoryId == id);
+            if (categoryContext == null)
             {
-                CategoryId = categoryDTO.CategoryId,
-                Name = categoryDTO.Name,
-                Books = books
-            };
-            _context.Entry(category).State = EntityState.Modified;
+                return NotFound();
+            }
+            categoryContext.CategoryId = categoryDTO.CategoryId;
+            categoryContext.Name = categoryDTO.Name;
 
             try
             {
@@ -97,8 +142,27 @@ namespace Api.Controllers
 
         // POST: api/Categories
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Create a new category.
+        /// </summary>
+        /// <param name="categoryDTO"></param>
+        /// <returns>Create a new category.</returns>
+        /// <remarks>
+        /// Instructions: Send a POST request to URI /api/categories with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///     POST /api/categories
+        ///         {
+        ///             "name": "New category name"
+        ///         }
+        /// </remarks>
+        /// <response code="204">New category created successfully</response>
+        /// <response code="404">Entity set 'LIBRARYContext.Categories' is null.</response>
         [HttpPost]
-        public async Task<ActionResult<Category>> PostCategory(CategoryDTO categoryDTO)
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<Category>> PostCategory(CategoryPostDTO categoryPostDTO)
         {
             if (_context.Categories == null)
             {
@@ -107,25 +171,39 @@ namespace Api.Controllers
 
             Category category = new Category()
             {
-                Name = categoryDTO.Name,
-                Books = null!
+                Name = categoryPostDTO.Name
             };
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
-            categoryDTO.CategoryId = category.CategoryId;
-            return CreatedAtAction(nameof(GetCategory), new { id = categoryDTO.CategoryId }, categoryDTO);
+            return NoContent();
         }
 
         // DELETE: api/Categories/5
+        /// <summary>
+        /// Delete a specific category.
+        /// </summary>
+        /// <param name="id" example="1007"></param>
+        /// <returns>Delete a specific category by ID.</returns>
+        /// <remarks>
+        /// Instructions: Just send a DELETE request to URI /api/categories/{id}, where ID is an INT.
+        ///     Sample request:
+        ///     
+        ///         DELETE /api/category/1007
+        /// </remarks>
+        /// <response code="204">Delete done successfully.</response>
+        /// <response code="404">Author not found.</response>
         [HttpDelete("{id}")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteCategory(int id)
         {
             if (_context.Categories == null)
             {
                 return NotFound();
             }
-            var category = await _context.Categories.FindAsync(id);
+            Category category = await _context.Categories.FindAsync(id);
             if (category == null)
             {
                 return NotFound();

@@ -22,6 +22,11 @@ namespace Api.Models
         public string? Name { get; set; }
     }
 
+    public class CategoryPostDTO
+    {
+        public string? Name { get; set; }
+    }
+
     public class CategoryDetailsDTO
     {
         public int CategoryId { get; set; }
