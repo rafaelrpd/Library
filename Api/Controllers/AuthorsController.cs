@@ -144,7 +144,7 @@ namespace Api.Controllers
         /// Create a new author.
         /// </summary>
         /// <param name="authorPostDTO"></param>
-        /// <returns>Create a new author and return the ID.</returns>
+        /// <returns>Create a new author.</returns>
         /// <remarks>
         /// Instructions: Send a POST request to URI /api/authors with the following body as JSON.
         ///     Sample request:
