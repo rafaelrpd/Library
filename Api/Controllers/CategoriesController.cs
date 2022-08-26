@@ -95,7 +95,7 @@ namespace Api.Controllers
         ///         PUT /api/categories/1
         ///         {
         ///             "categoryId": 1,
-        ///             "name": "New category name",
+        ///             "name": "New category name"
         ///         }
         /// </remarks>
         /// <response code="204">Changes done correctly.</response>
@@ -162,7 +162,7 @@ namespace Api.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Category>> PostCategory(CategoryPostDTO categoryPostDTO)
+        public async Task<IActionResult> PostCategory(CategoryPostDTO categoryPostDTO)
         {
             if (_context.Categories == null)
             {
