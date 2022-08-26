@@ -171,7 +171,7 @@ namespace Api.Controllers
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<Book>> PostBook(BookDTO bookDTO)
+        public async Task<IActionResult> PostBook(BookDTO bookDTO)
         {
             if (_context.Books == null)
             {
@@ -216,7 +216,7 @@ namespace Api.Controllers
         /// Delete a specific book.
         /// </summary>
         /// <param name="id" example="8886713611511"></param>
-        /// <returns>Delete a specific book by ID.</returns>
+        /// <returns>Delete a specific book by ISBN.</returns>
         /// <remarks>
         /// Instructions: Just send a DELETE request to URI /api/books/{id}, where ID is an ISBN as INT(13).
         ///     Sample request:
