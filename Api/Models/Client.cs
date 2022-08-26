@@ -21,7 +21,6 @@ namespace Api.Models
     {
         public string Cpf { get; set; } = null!;
         public string? Name { get; set; }
-        public DateTime? RegistrationDate { get; set; }
     }
 
     public class ClientDetailsDTO

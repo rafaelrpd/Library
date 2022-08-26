@@ -21,7 +21,19 @@ namespace Api.Controllers
         }
 
         // GET: api/Clients
+        /// <summary>
+        /// List all clients with CPF and name.
+        /// </summary>
+        /// <returns>List all clientes with CPF and name.</returns>
+        /// <remarks>
+        /// Instructions: Just send a GET request to URI /api/clients.
+        /// </remarks>
+        /// <response code="200">Returns all clients with simple information.</response>
+        /// <response code="404">Client list not found.</response>
         [HttpGet]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<ClientDTO>>> GetClients()
         {
           if (_context.Clients == null)
@@ -33,32 +45,71 @@ namespace Api.Controllers
                 .ToListAsync();
         }
 
-        // GET: api/Clients/CPF number
+        // GET: api/Clients/33399966622
+        /// <summary>
+        /// Return a specific client with full information.
+        /// </summary>
+        /// <returns>Return a specific client with full information.</returns>
+        /// <remarks>
+        /// Instructions: Just send a GET request to URI /api/clients/{id}, where ID is an CPF as INT(11).
+        ///     Sample request:
+        ///     
+        ///         GET /api/books/33399966622
+        /// </remarks>
+        /// <param name="id" example="33399966622"></param>
+        /// <response code="200">Return a specific client with full information.</response>
+        /// <response code="404">Client not found.</response>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Client>> GetClient(string id)
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ClientDetailsDTO>> GetClient(string id)
         {
             if (_context.Clients == null)
             {
                 return NotFound();
             }
 
-            var client = await _context.Clients
+            ClientDetailsDTO client = await _context.Clients
                 .Where(c => c.Cpf == id)
                 .Include(b => b.BorrowedBooks)
                 .Select(c => ClientDetailsToDTO(c))
-                .ToListAsync();
+                .FirstOrDefaultAsync();
 
             if (client == null)
             {
                 return NotFound();
             }
 
-            return Ok(client);
+            return client;
         }
 
-        // PUT: api/Clients/CPF number
+        // PUT: api/Clients/33399966622
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Change all info of a specific client.
+        /// </summary>
+        /// <param name="id" example="33399966622"></param>
+        /// <param name="clientDTO"></param>
+        /// <returns>Change all information from a specific client.</returns>
+        /// <remarks>
+        /// Instructions: Send a PUT request to URI /api/clients/{id}, where ID is an CPF as INT(11) with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///         PUT /api/books/33399966622
+        ///         {
+        ///             "cpf": 33399966622,
+        ///             "name": "New name after put"
+        ///         }
+        /// </remarks>
+        /// <response code="204">Changes done correctly.</response>
+        /// <response code="400">URI ID not equal as informed in JSON body.</response>
+        /// <response code="404">Client not found.</response>
         [HttpPut("{id}")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutClient(string id, ClientDTO clientDTO)
         {
             if (id != clientDTO.Cpf)
@@ -66,15 +117,13 @@ namespace Api.Controllers
                 return BadRequest();
             }
 
-            ICollection<BorrowedBook> borrowedBooks = _context.BorrowedBooks.Where(ci => ci.ClientId == clientDTO.Cpf).ToList();
-            Client client = new Client()
+            Client clientContext = await _context.Clients.FirstOrDefaultAsync(ci => ci.Cpf == id);
+            if (clientContext == null)
             {
-                Cpf = clientDTO.Cpf,
-                Name = clientDTO.Name,
-                RegistrationDate = clientDTO.RegistrationDate,
-                BorrowedBooks = borrowedBooks
-            };
-            _context.Entry(client).State = EntityState.Modified;
+                return NotFound();
+            }
+            clientContext.Cpf = clientDTO.Cpf;
+            clientContext.Name = clientDTO.Name;
 
             try
             {
@@ -97,8 +146,28 @@ namespace Api.Controllers
 
         // POST: api/Clients
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Create a new client.
+        /// </summary>
+        /// <param name="clientDTO"></param>
+        /// <returns>Create a new client.</returns>
+        /// <remarks>
+        /// Instructions: Send a POST request to URI /api/clients with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///     POST /api/clients
+        ///         {
+        ///             "cpf": 8886713611511,
+        ///             "name": "3"
+        ///         }
+        /// </remarks>
+        /// <response code="204">New client created successfully</response>
+        /// <response code="404">Entity set 'LIBRARYContext.Clients' is null.</response>
         [HttpPost]
-        public async Task<ActionResult<Client>> PostClient(ClientDTO clientDTO)
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> PostClient(ClientDTO clientDTO)
         {
             if (_context.Clients == null)
             {
@@ -110,7 +179,6 @@ namespace Api.Controllers
             {
                 Cpf = clientDTO.Cpf,
                 Name = clientDTO.Name,
-                RegistrationDate = clientDTO.RegistrationDate,
                 BorrowedBooks = null!
             };
             _context.Clients.Add(client);
@@ -130,10 +198,23 @@ namespace Api.Controllers
                 }
             }
 
-            return CreatedAtAction(nameof(GetClient), new { id = clientDTO.Cpf }, clientDTO);
+            return NoContent();
         }
 
-        // DELETE: api/Clients/CPF number
+        // DELETE: api/Clients/33399966622
+        /// <summary>
+        /// Delete a specific client.
+        /// </summary>
+        /// <param name="id" example="33399966622"></param>
+        /// <returns>Delete a specific client by CPF.</returns>
+        /// <remarks>
+        /// Instructions: Just send a DELETE request to URI /api/clients/{id}, where ID is an CPF as INT(11).
+        ///     Sample request:
+        ///     
+        ///         DELETE /api/clients/33399966622
+        /// </remarks>
+        /// <response code="204">Delete done successfully.</response>
+        /// <response code="404">Client not found.</response>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteClient(string id)
         {
@@ -162,8 +243,7 @@ namespace Api.Controllers
             new ClientDTO
             {
                 Cpf = client.Cpf,
-                Name = client.Name,
-                RegistrationDate = client.RegistrationDate
+                Name = client.Name
             };
 
         static ClientDetailsDTO ClientDetailsToDTO(Client client) =>
