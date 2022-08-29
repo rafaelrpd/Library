@@ -21,7 +21,19 @@ namespace Api.Controllers
         }
 
         // GET: api/BorrowedBooks
+        /// <summary>
+        /// List all borrowed books with id, clientId, bookId, borrowedDate, limitDate and returnedDate.
+        /// </summary>
+        /// <returns>List all borrowed books with id, clientId, bookId, borrowedDate, limitDate and returnedDate.</returns>
+        /// <remarks>
+        /// Instructions: Just send a GET request to URI /api/borrowedbooks.
+        /// </remarks>
+        /// <response code="200">Returns all borrowed books with simple information.</response>
+        /// <response code="404">Borrowed books list not found.</response>
         [HttpGet]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<IEnumerable<BorrowedBookDTO>>> GetBorrowedBooks()
         {
             if (_context.BorrowedBooks == null)
@@ -33,32 +45,73 @@ namespace Api.Controllers
                 .ToListAsync();
         }
 
-        // GET: api/BorrowedBooks/8886713611511
+        // GET: api/BorrowedBooks/1
+        /// <summary>
+        /// Return a specific transaction by ID with a borrowed transaction with full information.
+        /// </summary>
+        /// <returns>Return a specific transaction by ID with a borrowed transaction with full information.</returns>
+        /// <remarks>
+        /// Instructions: Just send a GET request to URI /api/borrowedbooks/{id}, where ID is an INT.
+        ///     Sample request:
+        ///     
+        ///         GET /api/borrowedbooks/1
+        /// </remarks>
+        /// <param name="id" example="1"></param>
+        /// <response code="200">Return a specific transaction by ID with a borrowed transaction with full information.</response>
+        /// <response code="404">Book not found.</response>
         [HttpGet("{id}")]
-        public async Task<ActionResult<BorrowedBook>> GetBorrowedBook(string id)
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BorrowedBookDetailsDTO>> GetBorrowedBook(int id)
         {
-          if (_context.BorrowedBooks == null)
-          {
-              return NotFound();
-          }
-            var borrowedBook = await _context.BorrowedBooks
-                .Where(i => i.Book.Isbn == id)
+            if (_context.BorrowedBooks == null)
+            {
+                return NotFound();
+            }
+            BorrowedBookDetailsDTO borrowedBook = await _context.BorrowedBooks
+                .Where(i => i.Id == id)
                 .Include(b => b.Book)
                 .Include(c => c.Client)
                 .Select(bb => BorrowedBookDetailsToDTO(bb))
-                .ToListAsync();
-
+                .FirstOrDefaultAsync();
             if (borrowedBook == null)
             {
                 return NotFound();
             }
-
-            return Ok(borrowedBook);
+            return borrowedBook;
         }
 
         // PUT: api/BorrowedBooks/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Change all info of a borrowed book transaction.
+        /// </summary>
+        /// <param name="id" example="1"></param>
+        /// <param name="borrowedBookDTO"></param>
+        /// <returns>Change all info of a borrowed book transaction.</returns>
+        /// <remarks>
+        /// Instructions: Send a PUT request to URI /api/borrowedbooks/{id}, where ID is an INT with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///         PUT /api/borrowedbooks/1
+        ///         {
+        ///             "id": 1,
+        ///             "clientId": "11122233345",
+        ///             "bookId": "1234567890123",
+        ///             "borrowedDate": "2022-08-29T00:00:00",
+        ///             "limitDate": "2022-08-29T00:00:00",
+        ///             "returnedDate": "2022-08-29T00:00:00"
+        ///         }
+        /// </remarks>
+        /// <response code="204">Changes done correctly.</response>
+        /// <response code="400">URI ID not equal as informed in JSON body.</response>
+        /// <response code="404">Borrowed book transaction not found.</response>
         [HttpPut("{id}")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutBorrowedBook(int id, BorrowedBookDTO borrowedBookDTO)
         {
             if (id != borrowedBookDTO.Id)
@@ -103,23 +156,44 @@ namespace Api.Controllers
 
         // POST: api/BorrowedBooks
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Create a new borrowed book trasaction.
+        /// </summary>
+        /// <param name="borrowedBookPostDTO"></param>
+        /// <returns>Create a new borrowed book trasaction.</returns>
+        /// <remarks>
+        /// Instructions: Send a POST request to URI /api/borrowedbooks with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///     POST /api/borrowedbooks
+        ///         {
+        ///             "clientId": "11122233345",
+        ///             "bookId": "1234567890123",
+        ///             "borrowedDate": "2022-08-29T00:00:00",
+        ///             "limitDate": "2022-08-29T00:00:00"
+        ///         }
+        /// </remarks>
+        /// <response code="204">New borrowed book transaction created successfully</response>
+        /// <response code="404">Entity set 'LIBRARYContext.BorrowedBooks' is null.</response>
         [HttpPost]
-        public async Task<ActionResult<BorrowedBook>> PostBorrowedBook(BorrowedBookDTO borrowedBookDTO)
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> PostBorrowedBook(BorrowedBookPostDTO borrowedBookPostDTO)
         {
             if (_context.BorrowedBooks == null)
             {
                 return Problem("Entity set 'LIBRARYContext.BorrowedBooks'  is null.");
             }
 
-            Book book = _context.Books.Where(bi => bi.Isbn == borrowedBookDTO.BookId).First();
-            Client client = _context.Clients.Where(ci => ci.Cpf == borrowedBookDTO.ClientId).First();
+            Book book = _context.Books.Where(bi => bi.Isbn == borrowedBookPostDTO.BookId).First();
+            Client client = _context.Clients.Where(ci => ci.Cpf == borrowedBookPostDTO.ClientId).First();
             BorrowedBook borrowedBook = new BorrowedBook()
             {
-                ClientId = borrowedBookDTO.ClientId,
-                BookId = borrowedBookDTO.BookId,
-                BorrowedDate = borrowedBookDTO.BorrowedDate,
-                LimitDate = borrowedBookDTO.LimitDate,
-                ReturnedDate = borrowedBookDTO.ReturnedDate,
+                ClientId = borrowedBookPostDTO.ClientId,
+                BookId = borrowedBookPostDTO.BookId,
+                BorrowedDate = borrowedBookPostDTO.BorrowedDate,
+                LimitDate = borrowedBookPostDTO.LimitDate,
                 Book = book,
                 Client = client
             };
@@ -127,12 +201,27 @@ namespace Api.Controllers
             _context.BorrowedBooks.Add(borrowedBook);
             await _context.SaveChangesAsync();
 
-            borrowedBookDTO.Id = borrowedBook.Id;
-            return CreatedAtAction(nameof(GetBorrowedBook), new { id = borrowedBookDTO.Id }, borrowedBookDTO);
+            return NoContent();
         }
 
         // DELETE: api/BorrowedBooks/5
+        /// <summary>
+        /// Delete a specific borrowed book transaction by ID.
+        /// </summary>
+        /// <param name="id" example="1"></param>
+        /// <returns>Delete a specific borrowed book transaction by ID.</returns>
+        /// <remarks>
+        /// Instructions: Just send a DELETE request to URI /api/borrowedbooks/{id}, where ID is an INT.
+        ///     Sample request:
+        ///     
+        ///         DELETE /api/borrowedbooks/1007
+        /// </remarks>
+        /// <response code="204">Delete done successfully.</response>
+        /// <response code="404">Borrowed book transaction not found.</response>
         [HttpDelete("{id}")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteBorrowedBook(int id)
         {
             if (_context.BorrowedBooks == null)
@@ -194,8 +283,7 @@ namespace Api.Controllers
             new ClientDTO
             {
                 Cpf = client.Cpf,
-                Name = client.Name,
-                RegistrationDate = client.RegistrationDate
+                Name = client.Name
             };
     }
 }
