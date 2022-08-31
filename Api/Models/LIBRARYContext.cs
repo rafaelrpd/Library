@@ -101,7 +101,8 @@ namespace Api.Models
 
                 entity.Property(e => e.BorrowedDate)
                     .HasColumnType("date")
-                    .HasColumnName("BORROWED DATE");
+                    .HasColumnName("BORROWED DATE")
+                    .HasDefaultValueSql("GETUTCDATE()");
 
                 entity.Property(e => e.ClientId)
                     .HasMaxLength(11)
@@ -111,7 +112,8 @@ namespace Api.Models
 
                 entity.Property(e => e.LimitDate)
                     .HasColumnType("date")
-                    .HasColumnName("LIMIT DATE");
+                    .HasColumnName("LIMIT DATE")
+                    .HasDefaultValueSql("DATEADD(DAY, 30, GETUTCDATE())");
 
                 entity.Property(e => e.ReturnedDate)
                     .HasColumnType("date")
