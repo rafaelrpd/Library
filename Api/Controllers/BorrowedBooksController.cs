@@ -154,46 +154,56 @@ namespace Api.Controllers
             return NoContent();
         }
 
-        // POST: api/BorrowedBooks
+        // POST: api/BorrowedBooks/lend
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         /// <summary>
         /// Create a new borrowed book trasaction.
         /// </summary>
-        /// <param name="borrowedBookPostDTO"></param>
+        /// <param name="borrowedBookLendDTO"></param>
         /// <returns>Create a new borrowed book trasaction.</returns>
         /// <remarks>
-        /// Instructions: Send a POST request to URI /api/borrowedbooks with the following body as JSON.
+        /// Instructions: Send a POST request to URI /api/borrowedbooks/lend with the following body as JSON.
         ///     Sample request:
         ///     
-        ///     POST /api/borrowedbooks
+        ///     POST /api/borrowedbooks/lend
         ///         {
         ///             "clientId": "11122233345",
-        ///             "bookId": "1234567890123",
-        ///             "borrowedDate": "2022-08-29T00:00:00",
-        ///             "limitDate": "2022-08-29T00:00:00"
+        ///             "bookId": "1234567890123"
         ///         }
         /// </remarks>
-        /// <response code="204">New borrowed book transaction created successfully</response>
+        /// <response code="204">New borrowed book transaction created successfully.</response>
+        /// <response code="400">Book not available to lend or book not found.</response>
         /// <response code="404">Entity set 'LIBRARYContext.BorrowedBooks' is null.</response>
-        [HttpPost]
+        [HttpPost("lend")]
         [Produces("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PostBorrowedBook(BorrowedBookPostDTO borrowedBookPostDTO)
+        public async Task<IActionResult> PostBorrowedBookLend(BorrowedBookLendDTO borrowedBookLendDTO)
         {
             if (_context.BorrowedBooks == null)
             {
                 return Problem("Entity set 'LIBRARYContext.BorrowedBooks'  is null.");
             }
 
-            Book book = _context.Books.Where(bi => bi.Isbn == borrowedBookPostDTO.BookId).First();
-            Client client = _context.Clients.Where(ci => ci.Cpf == borrowedBookPostDTO.ClientId).First();
+            if (!CanLendBook(borrowedBookLendDTO.BookId))
+            {
+                return BadRequest();
+            }
+
+            Book book = _context.Books.Where(bi => bi.Isbn == borrowedBookLendDTO.BookId).First();
+            if (book == null)
+            {
+                return BadRequest();
+            }
+
+            book.Quantity -= 1;
+
+            Client client = _context.Clients.Where(ci => ci.Cpf == borrowedBookLendDTO.ClientId).First();
             BorrowedBook borrowedBook = new BorrowedBook()
             {
-                ClientId = borrowedBookPostDTO.ClientId,
-                BookId = borrowedBookPostDTO.BookId,
-                BorrowedDate = borrowedBookPostDTO.BorrowedDate,
-                LimitDate = borrowedBookPostDTO.LimitDate,
+                ClientId = borrowedBookLendDTO.ClientId,
+                BookId = borrowedBookLendDTO.BookId,
                 Book = book,
                 Client = client
             };
@@ -201,6 +211,48 @@ namespace Api.Controllers
             _context.BorrowedBooks.Add(borrowedBook);
             await _context.SaveChangesAsync();
 
+            return NoContent();
+        }
+
+        // POST: api/BorrowedBooks/return
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Return a borrowed book.
+        /// </summary>
+        /// <param name="borrowedBookReturnDTO"></param>
+        /// <returns>Return a borrowed book.</returns>
+        /// <remarks>
+        /// Instructions: Send a POST request to URI /api/borrowedbooks/return with the following body as JSON.
+        ///     Sample request:
+        ///     
+        ///     POST /api/borrowedbooks/return
+        ///         {
+        ///             "id": 1
+        ///         }
+        /// </remarks>
+        /// <response code="204">Return a borrowed book.</response>
+        /// <response code="400">Book not available to return.</response>
+        /// <response code="404">Entity set 'LIBRARYContext.BorrowedBooks' is null.</response>
+        [HttpPost("return")]
+        [Produces("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> PostBorrowedBookReturn(BorrowedBookReturnDTO borrowedBookReturnDTO)
+        {
+            if (_context.BorrowedBooks == null)
+            {
+                return Problem("Entity set 'LIBRARYContext.BorrowedBooks'  is null.");
+            }
+
+            BorrowedBook borrowedBook = _context.BorrowedBooks.First(bbi => bbi.Id.Equals(borrowedBookReturnDTO.Id));
+            if (borrowedBook.ReturnedDate == null)
+            {
+                borrowedBook.ReturnedDate = DateTime.UtcNow;
+                _context.Books.First(bi => bi.Isbn.Equals(borrowedBook.BookId)).Quantity += 1;
+                await _context.SaveChangesAsync();
+            }
+                        
             return NoContent();
         }
 
@@ -285,5 +337,11 @@ namespace Api.Controllers
                 Cpf = client.Cpf,
                 Name = client.Name
             };
+
+        bool CanLendBook(string isbn)
+        {
+            var quantity = _context.Books.Where(b => b.Isbn.Equals(isbn)).Select(bq => bq.Quantity).First();
+            return (quantity > 0);
+        }
     }
 }

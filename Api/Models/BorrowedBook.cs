@@ -26,12 +26,14 @@ namespace Api.Models
         public DateTime? ReturnedDate { get; set; }
     }
 
-    public class BorrowedBookPostDTO
+    public class BorrowedBookLendDTO
     {
         public string ClientId { get; set; } = null!;
         public string BookId { get; set; } = null!;
-        public DateTime? BorrowedDate { get; set; }
-        public DateTime? LimitDate { get; set; }
+    }
+    public class BorrowedBookReturnDTO
+    {
+        public int Id { get; set; }
     }
 
     public class BorrowedBookDetailsDTO
