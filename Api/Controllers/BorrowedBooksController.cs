@@ -249,7 +249,8 @@ namespace Api.Controllers
             if (borrowedBook.ReturnedDate == null)
             {
                 borrowedBook.ReturnedDate = DateTime.UtcNow;
-                _context.Books.First(bi => bi.Isbn.Equals(borrowedBook.BookId)).Quantity += 1;
+                Book book = _context.Books.Single(bi => bi.Isbn.Equals(borrowedBook.BookId));
+                book.Quantity += 1;
                 await _context.SaveChangesAsync();
             }
                         
