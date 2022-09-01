@@ -145,7 +145,7 @@ namespace Api.Controllers
         /// <summary>
         /// Create a new category.
         /// </summary>
-        /// <param name="categoryDTO"></param>
+        /// <param name="categoryPostDTO"></param>
         /// <returns>Create a new category.</returns>
         /// <remarks>
         /// Instructions: Send a POST request to URI /api/categories with the following body as JSON.
